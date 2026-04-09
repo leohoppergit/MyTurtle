@@ -7,7 +7,7 @@ Eine kleine, lokal arbeitende Android-App zur Dokumentation des Lebens einer Sch
 ![MyTurtle Feature Graphic](docs/assets/myturtle-feature-graphic.png)
 
 <p align="left">
-  <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/leohoppergit/MyTurtle">
+  <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://app/%7B%22id%22%3A%22de.leohopper.myturtle%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fleohoppergit%2FMyTurtle%22%2C%22author%22%3A%22leohoppergit%22%2C%22name%22%3A%22MyTurtle%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Afalse%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22dontSortReleasesList%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22versionDetection%5C%22%3A%5C%22standardVersionDetection%5C%22%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%28%3Fi%29%5EMyTurtle-.%2A%5C%5C%5C%5C.apk%24%5C%22%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22about%5C%22%3A%5C%22%5C%22%7D%22%7D">
     <img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54" />
   </a>
 </p>
@@ -50,11 +50,15 @@ Die signierte Release-APK wird über GitHub Releases bereitgestellt.
 
 ### Obtainium
 
-Der Obtainium-Button oben nutzt jetzt denselben schlanken Redirect-Stil wie bei ShiftRounds und übergibt direkt dieses Repository an Obtainium.
+Der Obtainium-Button oben nutzt den offiziellen `/app`-Linktyp von Obtainium und übergibt bereits die vollständige App-Konfiguration.
+
+Dadurch ist für MyTurtle auch `includePrereleases=true` direkt gesetzt, damit die aktuelle Beta-Version gefunden wird.
 
 Falls dein Browser oder Android-Gerät keine App-Weiterleitung zulässt, kannst du alternativ direkt dieses Repository als GitHub-Quelle in Obtainium hinzufügen:
 
 `https://github.com/leohoppergit/MyTurtle`
+
+Wenn du den manuellen Weg nutzt, aktiviere in Obtainium bitte zusätzlich `Prereleases`, weil `v0.1.0-beta` als Pre-Release veröffentlicht ist.
 
 ### AppVerifier
 
