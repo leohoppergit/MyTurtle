@@ -6,7 +6,9 @@ Eine kleine, lokal arbeitende Android-App zur Dokumentation des Lebens einer Sch
 
 ![MyTurtle Feature Graphic](docs/assets/myturtle-feature-graphic.png)
 
-[![Get it on Obtainium](https://img.shields.io/badge/Get%20it%20on-Obtainium-3ddc84?logo=android&logoColor=white)](https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://app/%257B%2522id%2522%253A%2522de.leohopper.myturtle%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fgithub.com%252Fleohoppergit%252FMyTurtle%2522%252C%2522author%2522%253A%2522leohoppergit%2522%252C%2522name%2522%253A%2522MyTurtle%2522%252C%2522preferredApkIndex%2522%253A0%252C%2522additionalSettings%2522%253A%2522%257B%255C%2522includePrereleases%255C%2522%253Atrue%252C%255C%2522fallbackToOlderReleases%255C%2522%253Afalse%252C%255C%2522filterReleaseTitlesByRegEx%255C%2522%253A%255C%2522%255C%2522%252C%255C%2522filterReleaseNotesByRegEx%255C%2522%253A%255C%2522%255C%2522%252C%255C%2522verifyLatestTag%255C%2522%253Afalse%252C%255C%2522dontSortReleasesList%255C%2522%253Afalse%252C%255C%2522trackOnly%255C%2522%253Afalse%252C%255C%2522versionDetection%255C%2522%253A%255C%2522standardVersionDetection%255C%2522%252C%255C%2522apkFilterRegEx%255C%2522%253A%255C%2522%255C%2522%252C%255C%2522autoApkFilterByArch%255C%2522%253Atrue%252C%255C%2522appName%255C%2522%253A%255C%2522%255C%2522%252C%255C%2522exemptFromBackgroundUpdates%255C%2522%253Afalse%252C%255C%2522skipUpdateNotifications%255C%2522%253Afalse%252C%255C%2522about%255C%2522%253A%255C%2522%255C%2522%257D%2522%257D)
+<a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/leohoppergit/MyTurtle">
+  <img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54" />
+</a>
 [![GitHub Release](https://img.shields.io/github/v/release/leohoppergit/MyTurtle?display_name=tag&include_prereleases&label=GitHub%20Release)](https://github.com/leohoppergit/MyTurtle/releases/tag/v0.1.0-beta)
 [![AppVerifier SHA-256](https://img.shields.io/badge/AppVerifier-SHA--256-556B2F)](https://github.com/leohoppergit/MyTurtle#appverifier)
 
@@ -39,9 +41,7 @@ Die signierte Release-APK wird über GitHub Releases bereitgestellt.
 
 ### Obtainium
 
-Der Obtainium-Button oben ist jetzt ein direkter Importlink für Obtainium.
-
-Er ist bereits so vorkonfiguriert, dass auch `v0.1.0-beta` als Pre-Release gefunden wird.
+Der Obtainium-Button oben nutzt jetzt denselben schlanken Redirect-Stil wie bei ShiftRounds und übergibt direkt dieses Repository an Obtainium.
 
 Falls dein Browser oder Android-Gerät keine App-Weiterleitung zulässt, kannst du alternativ direkt dieses Repository als GitHub-Quelle in Obtainium hinzufügen:
 
