@@ -6,11 +6,20 @@ Eine kleine, lokal arbeitende Android-App zur Dokumentation des Lebens einer Sch
 
 ![MyTurtle Feature Graphic](docs/assets/myturtle-feature-graphic.png)
 
-<a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/leohoppergit/MyTurtle">
-  <img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54" />
-</a>
-[![GitHub Release](https://img.shields.io/github/v/release/leohoppergit/MyTurtle?display_name=tag&include_prereleases&label=GitHub%20Release)](https://github.com/leohoppergit/MyTurtle/releases/tag/v0.1.0-beta)
-[![AppVerifier SHA-256](https://img.shields.io/badge/AppVerifier-SHA--256-556B2F)](https://github.com/leohoppergit/MyTurtle#appverifier)
+<p align="left">
+  <a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/leohoppergit/MyTurtle">
+    <img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54" />
+  </a>
+</p>
+
+<p align="left">
+  <a href="https://github.com/leohoppergit/MyTurtle/releases/tag/v0.1.0-beta">
+    <img src="https://img.shields.io/github/v/release/leohoppergit/MyTurtle?display_name=tag&amp;include_prereleases&amp;label=GitHub%20Release" alt="GitHub Release" />
+  </a>
+  <a href="https://github.com/leohoppergit/MyTurtle#appverifier">
+    <img src="https://img.shields.io/badge/AppVerifier-SHA--256-556B2F" alt="AppVerifier SHA-256" />
+  </a>
+</p>
 
 ## Enthalten in der Grundversion
 
