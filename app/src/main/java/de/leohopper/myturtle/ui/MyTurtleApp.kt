@@ -4,6 +4,8 @@ import android.app.DatePickerDialog
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -38,18 +40,24 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.RestoreFromTrash
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -58,10 +66,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,7 +90,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.ImageVector.Builder
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -88,6 +108,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import de.leohopper.myturtle.data.HomeCardLayout
 import de.leohopper.myturtle.domain.HatchDateInfo
 import de.leohopper.myturtle.domain.HatchDatePrecision
 import de.leohopper.myturtle.domain.LifeEventRecord
@@ -108,9 +129,11 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.ResolverStyle
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 private enum class MainScreen {
     HOME,
+    SETTINGS,
     TRASH,
 }
 
@@ -122,6 +145,75 @@ private enum class ChartMetric {
 private enum class PhotoAttachmentTarget {
     MEASUREMENT,
     YEAR_PHOTO,
+}
+
+private data class HomeStatChip(
+    val icon: ImageVector,
+    val label: String,
+)
+
+private enum class TurtleDetailTab(
+    val label: String,
+    val icon: ImageVector,
+) {
+    OVERVIEW("Übersicht", TurtleShellTabIcon),
+    MEASUREMENTS("Messungen", Icons.Filled.Straighten),
+    EVENTS("Chronik", Icons.Filled.HourglassTop),
+    PHOTOS("Fotos", Icons.Filled.Collections),
+}
+
+private val TurtleShellTabIcon: ImageVector by lazy {
+    Builder(
+        name = "TurtleShellTabIcon",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        path(
+            fill = null,
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1.75f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+            pathFillType = PathFillType.NonZero,
+        ) {
+            moveTo(12f, 3.2f)
+            curveTo(7.6f, 3.2f, 4.4f, 6.5f, 4.4f, 11.1f)
+            curveTo(4.4f, 15.9f, 7.7f, 20.2f, 12f, 20.8f)
+            curveTo(16.3f, 20.2f, 19.6f, 15.9f, 19.6f, 11.1f)
+            curveTo(19.6f, 6.5f, 16.4f, 3.2f, 12f, 3.2f)
+            close()
+
+            moveTo(12f, 6.2f)
+            lineTo(13.9f, 7.7f)
+            lineTo(13.6f, 10.0f)
+            horizontalLineTo(10.4f)
+            lineTo(10.1f, 7.7f)
+            close()
+
+            moveTo(7.0f, 10.5f)
+            lineTo(10.0f, 10.5f)
+            lineTo(10.2f, 13.4f)
+            lineTo(7.8f, 14.8f)
+            lineTo(6.0f, 12.7f)
+            close()
+
+            moveTo(17.0f, 10.5f)
+            lineTo(14.0f, 10.5f)
+            lineTo(13.8f, 13.4f)
+            lineTo(16.2f, 14.8f)
+            lineTo(18.0f, 12.7f)
+            close()
+
+            moveTo(10.4f, 13.9f)
+            horizontalLineTo(13.6f)
+            lineTo(13.9f, 17.0f)
+            lineTo(12f, 18.5f)
+            lineTo(10.1f, 17.0f)
+            close()
+        }
+    }.build()
 }
 
 private data class DropdownGroup(
@@ -183,6 +275,9 @@ private val TURTLE_SPECIES_GROUPS = listOf(
 )
 
 private val TURTLE_SPECIES_OPTIONS = TURTLE_SPECIES_GROUPS.flatMap { it.options }
+private val APP_UPDATED_MONTH: YearMonth = YearMonth.of(2026, 4)
+private val MONTH_YEAR_META_FORMAT: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("MMMM uuuu", Locale.GERMAN)
 
 private val TURTLE_SEX_OPTIONS = listOf(
     "Unbekannt",
@@ -206,11 +301,14 @@ fun MyTurtleApp(
 ) {
     val turtles by viewModel.turtles.collectAsStateWithLifecycle()
     val trashedTurtles by viewModel.trashedTurtles.collectAsStateWithLifecycle()
+    val homeCardLayout by viewModel.homeCardLayout.collectAsStateWithLifecycle()
+    val isBackupOperationRunning by viewModel.isBackupOperationRunning.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     var currentScreen by rememberSaveable { mutableStateOf(MainScreen.HOME) }
     var selectedTurtleId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedDetailTab by rememberSaveable(selectedTurtleId) { mutableStateOf(TurtleDetailTab.OVERVIEW) }
     var showAddTurtleDialog by rememberSaveable { mutableStateOf(false) }
     var showEditTurtleDialog by rememberSaveable { mutableStateOf(false) }
     var showMeasurementDialog by rememberSaveable { mutableStateOf(false) }
@@ -222,6 +320,7 @@ fun MyTurtleApp(
     var pendingCameraUri by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingCameraCleanupPath by rememberSaveable { mutableStateOf<String?>(null) }
     var previewPhotoUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingRestoreBackupUri by rememberSaveable { mutableStateOf<String?>(null) }
     var deleteRequest by remember { mutableStateOf<DeleteRequest?>(null) }
 
     val selectedTurtle = turtles.firstOrNull { it.id == selectedTurtleId }
@@ -304,6 +403,20 @@ fun MyTurtleApp(
         }
     }
 
+    val backupExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.exportBackup(uri)
+        }
+    }
+
+    val backupImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        pendingRestoreBackupUri = uri?.toString()
+    }
+
     LaunchedEffect(Unit) {
         viewModel.messages.collectLatest { message ->
             snackbarHostState.showSnackbar(message)
@@ -325,40 +438,64 @@ fun MyTurtleApp(
     Scaffold(
         topBar = {
             if (selectedTurtle == null) {
-                if (currentScreen == MainScreen.HOME) {
-                    CenterAlignedTopAppBar(
-                        title = { Text("MyTurtle") },
-                        actions = {
-                            IconButton(onClick = { currentScreen = MainScreen.TRASH }) {
-                                Icon(
-                                    imageVector = Icons.Filled.RestoreFromTrash,
-                                    contentDescription = "Papierkorb öffnen",
-                                )
-                            }
-                        },
-                    )
-                } else {
-                    CenterAlignedTopAppBar(
-                        navigationIcon = {
-                            IconButton(onClick = { currentScreen = MainScreen.HOME }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Zurück",
-                                )
-                            }
-                        },
-                        title = { Text("Papierkorb") },
-                        actions = {
-                            if (trashedTurtles.isNotEmpty()) {
-                                IconButton(onClick = { deleteRequest = DeleteRequest.EmptyTrash }) {
+                when (currentScreen) {
+                    MainScreen.HOME -> {
+                        CenterAlignedTopAppBar(
+                            title = { Text("MyTurtle") },
+                            actions = {
+                                IconButton(onClick = { currentScreen = MainScreen.SETTINGS }) {
                                     Icon(
-                                        imageVector = Icons.Filled.DeleteSweep,
-                                        contentDescription = "Papierkorb leeren",
+                                        imageVector = Icons.Filled.Settings,
+                                        contentDescription = "Einstellungen öffnen",
                                     )
                                 }
-                            }
-                        },
-                    )
+                                IconButton(onClick = { currentScreen = MainScreen.TRASH }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.RestoreFromTrash,
+                                        contentDescription = "Papierkorb öffnen",
+                                    )
+                                }
+                            },
+                        )
+                    }
+
+                    MainScreen.SETTINGS -> {
+                        CenterAlignedTopAppBar(
+                            navigationIcon = {
+                                IconButton(onClick = { currentScreen = MainScreen.HOME }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Zurück",
+                                    )
+                                }
+                            },
+                            title = { Text("Einstellungen") },
+                        )
+                    }
+
+                    MainScreen.TRASH -> {
+                        CenterAlignedTopAppBar(
+                            navigationIcon = {
+                                IconButton(onClick = { currentScreen = MainScreen.HOME }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Zurück",
+                                    )
+                                }
+                            },
+                            title = { Text("Papierkorb") },
+                            actions = {
+                                if (trashedTurtles.isNotEmpty()) {
+                                    IconButton(onClick = { deleteRequest = DeleteRequest.EmptyTrash }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.DeleteSweep,
+                                            contentDescription = "Papierkorb leeren",
+                                        )
+                                    }
+                                }
+                            },
+                        )
+                    }
                 }
             } else {
                 CenterAlignedTopAppBar(
@@ -404,6 +541,25 @@ fun MyTurtleApp(
                 )
             }
         },
+        bottomBar = {
+            if (selectedTurtle != null) {
+                NavigationBar {
+                    TurtleDetailTab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selectedDetailTab == tab,
+                            onClick = { selectedDetailTab = tab },
+                            icon = {
+                                Icon(
+                                    imageVector = tab.icon,
+                                    contentDescription = tab.label,
+                                )
+                            },
+                            label = { Text(tab.label) },
+                        )
+                    }
+                }
+            }
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { innerPadding ->
         Surface(
@@ -411,25 +567,52 @@ fun MyTurtleApp(
             color = MaterialTheme.colorScheme.surface,
         ) {
             if (selectedTurtle == null) {
-                if (currentScreen == MainScreen.HOME) {
-                    HomeScreen(
-                        turtles = turtles,
-                        contentPadding = innerPadding,
-                        onOpenTurtle = { selectedTurtleId = it },
-                        onCreateTurtle = { showAddTurtleDialog = true },
-                    )
-                } else {
-                    TrashScreen(
-                        turtles = trashedTurtles,
-                        contentPadding = innerPadding,
-                        onRestoreTurtle = viewModel::restoreTurtle,
-                        onDeleteTurtle = { deleteRequest = DeleteRequest.TrashedTurtle(it) },
-                        onEmptyTrash = { deleteRequest = DeleteRequest.EmptyTrash },
-                    )
+                when (currentScreen) {
+                    MainScreen.HOME -> {
+                        HomeScreen(
+                            turtles = turtles,
+                            cardLayout = homeCardLayout,
+                            contentPadding = innerPadding,
+                            onOpenTurtle = { selectedTurtleId = it },
+                            onCreateTurtle = { showAddTurtleDialog = true },
+                        )
+                    }
+
+                    MainScreen.SETTINGS -> {
+                        SettingsScreen(
+                            selectedLayout = homeCardLayout,
+                            isBackupBusy = isBackupOperationRunning,
+                            contentPadding = innerPadding,
+                            onLayoutChange = viewModel::updateHomeCardLayout,
+                            onExportBackup = {
+                                backupExportLauncher.launch(defaultBackupFileName())
+                            },
+                            onImportBackup = {
+                                backupImportLauncher.launch(
+                                    arrayOf(
+                                        "application/zip",
+                                        "application/octet-stream",
+                                        "*/*",
+                                    ),
+                                )
+                            },
+                        )
+                    }
+
+                    MainScreen.TRASH -> {
+                        TrashScreen(
+                            turtles = trashedTurtles,
+                            contentPadding = innerPadding,
+                            onRestoreTurtle = viewModel::restoreTurtle,
+                            onDeleteTurtle = { deleteRequest = DeleteRequest.TrashedTurtle(it) },
+                            onEmptyTrash = { deleteRequest = DeleteRequest.EmptyTrash },
+                        )
+                    }
                 }
             } else {
                 TurtleDetailScreen(
                     turtle = selectedTurtle,
+                    selectedTab = selectedDetailTab,
                     contentPadding = innerPadding,
                     onAddMeasurement = { showMeasurementDialog = true },
                     onAddEvent = { showEventDialog = true },
@@ -592,6 +775,16 @@ fun MyTurtleApp(
         )
     }
 
+    pendingRestoreBackupUri?.let { uriString ->
+        ConfirmRestoreDialog(
+            onDismiss = { pendingRestoreBackupUri = null },
+            onConfirm = {
+                viewModel.importBackup(Uri.parse(uriString))
+                pendingRestoreBackupUri = null
+            },
+        )
+    }
+
     deleteRequest?.let { request ->
         ConfirmDeleteDialog(
             title = when (request) {
@@ -639,6 +832,7 @@ fun MyTurtleApp(
 @Composable
 private fun HomeScreen(
     turtles: List<TurtleDetails>,
+    cardLayout: HomeCardLayout,
     contentPadding: PaddingValues,
     onOpenTurtle: (Long) -> Unit,
     onCreateTurtle: () -> Unit,
@@ -653,42 +847,6 @@ private fun HomeScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ElevatedCard(
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-            ),
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = "Datenschutzfreundliche Schildkröten-Dokumentation",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = "Alle Daten bleiben lokal auf deinem Gerät. Du kannst Gewicht, Länge, Fotos und Lebensereignisse über viele Jahre hinweg dokumentieren.",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }
-        }
-
-        ElevatedCard {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "Für die Grundversion vorgesehen",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text("Gewichtsverlauf wie in deiner Tabelle, wiederkehrende Längenmessungen, Jahresfotos und freie Lebensereignisse.")
-                Text("Die App ist bewusst klein gehalten: keine Cloud, kein Konto, keine Tracking-SDKs.")
-            }
-        }
-
         if (turtles.isEmpty()) {
             ElevatedCard {
                 Column(
@@ -710,6 +868,7 @@ private fun HomeScreen(
             turtles.forEach { turtle ->
                 TurtleCard(
                     turtle = turtle,
+                    cardLayout = cardLayout,
                     onClick = { onOpenTurtle(turtle.id) },
                 )
             }
@@ -717,6 +876,446 @@ private fun HomeScreen(
 
         Spacer(modifier = Modifier.height(72.dp))
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsScreen(
+    selectedLayout: HomeCardLayout,
+    isBackupBusy: Boolean,
+    contentPadding: PaddingValues,
+    onLayoutChange: (HomeCardLayout) -> Unit,
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
+    var aboutExpanded by rememberSaveable { mutableStateOf(false) }
+    val versionName = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull().orEmpty().ifBlank { "0.1.0-alpha" }
+    }
+    val updatedLabel = remember { APP_UPDATED_MONTH.format(MONTH_YEAR_META_FORMAT) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        ElevatedCard(
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
+            ),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    modifier = Modifier.size(54.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Darstellung & App-Info",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Passe an, wie deine Schildkröten auf dem Startscreen erscheinen. Alle Einstellungen bleiben lokal auf deinem Gerät.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        }
+
+        SectionCard(
+            title = "Startscreen",
+            subtitle = "So werden deine Schildkröten-Karten in der Übersicht dargestellt",
+        ) {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                HomeCardLayout.entries.forEachIndexed { index, layout ->
+                    SegmentedButton(
+                        selected = selectedLayout == layout,
+                        onClick = { onLayoutChange(layout) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = HomeCardLayout.entries.size,
+                        ),
+                        modifier = Modifier.weight(1f),
+                        label = {
+                            Text(
+                                text = layout.label,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                    )
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = selectedLayout.label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = selectedLayout.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    CardLayoutPreview(layout = selectedLayout)
+                }
+            }
+        }
+
+        SectionCard(
+            title = "Sicherung & Wiederherstellung",
+            subtitle = "Erstelle ein vollständiges Backup deiner lokalen Daten oder spiele es später wieder ein",
+        ) {
+            Text(
+                text = "Gesichert werden Schildkröten, Messungen, Lebensereignisse, Fotos und die gewählte Kartenansicht.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            SettingsActionButton(
+                title = if (isBackupBusy) "Backup wird erstellt ..." else "Backup exportieren",
+                subtitle = "Erzeugt eine ZIP-Datei mit Datenbankinhalt und lokalen Bilddateien.",
+                enabled = !isBackupBusy,
+                onClick = onExportBackup,
+            )
+
+            SettingsActionButton(
+                title = if (isBackupBusy) "Wiederherstellung läuft ..." else "Backup wiederherstellen",
+                subtitle = "Ersetzt den aktuellen lokalen Bestand durch ein zuvor exportiertes MyTurtle-Backup.",
+                enabled = !isBackupBusy,
+                onClick = onImportBackup,
+            )
+        }
+
+        ExpandableSettingsCard(
+            title = "About MyTurtle",
+            subtitle = "Datenschutz, Grundidee und was die App bewusst nicht macht",
+            icon = Icons.Filled.Info,
+            expanded = aboutExpanded,
+            onToggle = { aboutExpanded = !aboutExpanded },
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SettingsInfoBlock(
+                    title = "Wofür die App gedacht ist",
+                    body = "MyTurtle ist ein ruhiges, lokales Dokumentationstool für das Leben einer Schildkröte: Gewicht, Panzerlänge, Fotos und Lebensereignisse über viele Jahre hinweg.",
+                )
+                SettingsInfoBlock(
+                    title = "Datenschutz",
+                    body = "Alle Daten bleiben lokal auf deinem Gerät. Es gibt keine Cloud, kein Konto und keine Tracking-SDKs. Importierte Bilder werden ohne EXIF-Daten übernommen.",
+                )
+                SettingsInfoBlock(
+                    title = "Bewusste Ausrichtung",
+                    body = "Die App soll technisch einfach, robust und langfristig verständlich bleiben statt möglichst viele Funktionen auf einmal zu sammeln.",
+                )
+            }
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "App-Stand",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SettingsMetaRow(
+                    label = "Version",
+                    value = versionName,
+                )
+                SettingsMetaRow(
+                    label = "Aktualisiert",
+                    value = updatedLabel,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun SettingsActionButton(
+    title: String,
+    subtitle: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    ElevatedCard(
+        onClick = onClick,
+        enabled = enabled,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandableSettingsCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ElevatedCard(
+        onClick = onToggle,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                )
+            }
+
+            AnimatedVisibility(visible = expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    HorizontalDivider()
+                    content()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsInfoBlock(
+    title: String,
+    body: String,
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.16f),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsMetaRow(
+    label: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Surface(
+            shape = RoundedCornerShape(999.dp),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+        ) {
+            Text(
+                text = value,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CardLayoutPreview(
+    layout: HomeCardLayout,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.18f),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(
+                when (layout) {
+                    HomeCardLayout.COMPACT -> 6.dp
+                    HomeCardLayout.STANDARD -> 10.dp
+                    HomeCardLayout.LARGE -> 12.dp
+                },
+            ),
+        ) {
+            PreviewBar(widthFraction = 0.42f, height = 18.dp)
+            PreviewBar(widthFraction = 0.68f, height = 12.dp, subtle = true)
+
+            when (layout) {
+                HomeCardLayout.COMPACT -> Unit
+                HomeCardLayout.STANDARD -> {
+                    PreviewChipRow(
+                        widths = listOf(0.92f, 0.82f, 0.72f),
+                    )
+                }
+                HomeCardLayout.LARGE -> {
+                    PreviewChipRow(widths = listOf(0.94f, 0.72f))
+                    PreviewChipRow(widths = listOf(0.78f, 0.82f, 0.68f))
+                    PreviewChipRow(widths = listOf(0.86f, 0.8f, 0.74f))
+                    PreviewBar(widthFraction = 0.82f, height = 10.dp, subtle = true)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewChipRow(
+    widths: List<Float>,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        widths.forEach { width ->
+            Box(modifier = Modifier.weight(1f)) {
+                PreviewBar(
+                    widthFraction = width,
+                    height = 34.dp,
+                )
+            }
+        }
+        repeat((3 - widths.size).coerceAtLeast(0)) {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun PreviewBar(
+    widthFraction: Float,
+    height: androidx.compose.ui.unit.Dp,
+    subtle: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth(widthFraction)
+            .height(height)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (subtle) {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
+                },
+            ),
+    )
 }
 
 @Composable
@@ -858,6 +1457,7 @@ private fun TrashTurtleCard(
 @Composable
 private fun TurtleCard(
     turtle: TurtleDetails,
+    cardLayout: HomeCardLayout,
     onClick: () -> Unit,
 ) {
     ElevatedCard(
@@ -866,56 +1466,154 @@ private fun TurtleCard(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
         ),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = turtle.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = turtle.species,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Filled.Pets,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+        when (cardLayout) {
+            HomeCardLayout.COMPACT -> CompactTurtleCardContent(turtle = turtle)
+            HomeCardLayout.STANDARD -> StandardTurtleCardContent(turtle = turtle)
+            HomeCardLayout.LARGE -> LargeTurtleCardContent(turtle = turtle)
+        }
+    }
+}
 
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                StatChip(
+@Composable
+private fun CompactTurtleCardContent(
+    turtle: TurtleDetails,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = turtle.name,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = turtle.species,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun StandardTurtleCardContent(
+    turtle: TurtleDetails,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = turtle.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = turtle.species,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        StatChipGrid(
+            items = listOf(
+                HomeStatChip(
                     icon = Icons.Filled.WaterDrop,
                     label = latestWeightLabel(turtle),
-                )
-                StatChip(
+                ),
+                HomeStatChip(
                     icon = Icons.Filled.Straighten,
                     label = latestLengthLabel(turtle),
-                )
-                StatChip(
+                ),
+                HomeStatChip(
                     icon = Icons.Filled.Event,
                     label = hatchDateLabel(turtle.hatchDate),
-                )
-            }
+                ),
+            ),
+        )
+    }
+}
+
+@Composable
+private fun LargeTurtleCardContent(
+    turtle: TurtleDetails,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = turtle.name,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = turtle.species,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        StatChipGrid(
+            items = listOf(
+                HomeStatChip(
+                    icon = Icons.Filled.Event,
+                    label = ageCardLabel(turtle.hatchDate),
+                ),
+                HomeStatChip(
+                    icon = Icons.Filled.Favorite,
+                    label = turtle.sex ?: TURTLE_SEX_OPTIONS.first(),
+                ),
+                HomeStatChip(
+                    icon = Icons.Filled.WaterDrop,
+                    label = latestWeightLabel(turtle),
+                ),
+                HomeStatChip(
+                    icon = Icons.Filled.Straighten,
+                    label = latestLengthLabel(turtle),
+                ),
+                HomeStatChip(
+                    icon = Icons.Filled.Collections,
+                    label = "${turtle.photos.size} Fotos",
+                ),
+                HomeStatChip(
+                    icon = Icons.Filled.WaterDrop,
+                    label = "${turtle.measurements.size} Messungen",
+                ),
+                HomeStatChip(
+                    icon = Icons.Filled.HourglassTop,
+                    label = "${turtle.lifeEvents.size} Ereignisse",
+                ),
+                HomeStatChip(
+                    icon = Icons.Filled.Event,
+                    label = hatchDateLabel(turtle.hatchDate),
+                ),
+            ),
+        )
+
+        if (turtle.notes.isNotBlank()) {
+            HorizontalDivider()
+            Text(
+                text = turtle.notes,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -923,6 +1621,7 @@ private fun TurtleCard(
 @Composable
 private fun TurtleDetailScreen(
     turtle: TurtleDetails,
+    selectedTab: TurtleDetailTab,
     contentPadding: PaddingValues,
     onAddMeasurement: () -> Unit,
     onAddEvent: () -> Unit,
@@ -932,7 +1631,6 @@ private fun TurtleDetailScreen(
     onDeleteEvent: (LifeEventRecord) -> Unit,
     onDeletePhoto: (PhotoRecord) -> Unit,
 ) {
-    val scrollState = rememberScrollState()
     var chartMetric by rememberSaveable(turtle.id) { mutableStateOf(ChartMetric.WEIGHT) }
 
     val measurementsDescending = remember(turtle.measurements) {
@@ -945,6 +1643,57 @@ private fun TurtleDetailScreen(
         turtle.photos.sortedWith(compareByDescending<PhotoRecord> { it.year }.thenByDescending { it.date ?: LocalDate.MIN })
             .groupBy { it.year }
     }
+    when (selectedTab) {
+        TurtleDetailTab.OVERVIEW -> TurtleOverviewTab(
+            turtle = turtle,
+            contentPadding = contentPadding,
+            measurementsDescending = measurementsDescending,
+            eventsDescending = eventsDescending,
+            photosByYear = photosByYear,
+            onAddMeasurement = onAddMeasurement,
+            onAddEvent = onAddEvent,
+            onAddPhoto = onAddPhoto,
+        )
+        TurtleDetailTab.MEASUREMENTS -> TurtleMeasurementsTab(
+            turtle = turtle,
+            contentPadding = contentPadding,
+            chartMetric = chartMetric,
+            onChartMetricChange = { chartMetric = it },
+            measurementsDescending = measurementsDescending,
+            onAddMeasurement = onAddMeasurement,
+            onOpenPhoto = onOpenPhoto,
+            onDeleteMeasurement = onDeleteMeasurement,
+        )
+        TurtleDetailTab.EVENTS -> TurtleEventsTab(
+            contentPadding = contentPadding,
+            eventsDescending = eventsDescending,
+            onAddEvent = onAddEvent,
+            onDeleteEvent = onDeleteEvent,
+        )
+        TurtleDetailTab.PHOTOS -> TurtlePhotosTab(
+            contentPadding = contentPadding,
+            photosByYear = photosByYear,
+            onAddPhoto = onAddPhoto,
+            onOpenPhoto = onOpenPhoto,
+            onDeletePhoto = onDeletePhoto,
+        )
+    }
+}
+
+@Composable
+private fun TurtleOverviewTab(
+    turtle: TurtleDetails,
+    contentPadding: PaddingValues,
+    measurementsDescending: List<MeasurementRecord>,
+    eventsDescending: List<LifeEventRecord>,
+    photosByYear: Map<Int, List<PhotoRecord>>,
+    onAddMeasurement: () -> Unit,
+    onAddEvent: () -> Unit,
+    onAddPhoto: () -> Unit,
+) {
+    val scrollState = rememberScrollState()
+    val latestMeasurement = measurementsDescending.firstOrNull()
+    val latestEvent = eventsDescending.firstOrNull()
 
     Column(
         modifier = Modifier
@@ -1000,6 +1749,120 @@ private fun TurtleDetailScreen(
         }
 
         SectionCard(
+            title = "Schnellzugriff",
+            subtitle = "Neue Einträge ohne langes Scrollen direkt anlegen",
+        ) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AssistChip(
+                    onClick = onAddMeasurement,
+                    label = { Text("Messung") },
+                    leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                )
+                AssistChip(
+                    onClick = onAddEvent,
+                    label = { Text("Ereignis") },
+                    leadingIcon = { Icon(Icons.Filled.Event, contentDescription = null) },
+                )
+                AssistChip(
+                    onClick = onAddPhoto,
+                    label = { Text("Foto") },
+                    leadingIcon = { Icon(Icons.Filled.Collections, contentDescription = null) },
+                )
+            }
+        }
+
+        SectionCard(
+            title = "Bestand",
+            subtitle = "Was bisher für diese Schildkröte dokumentiert wurde",
+        ) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                StatChip(
+                    icon = Icons.Filled.WaterDrop,
+                    label = "${measurementsDescending.size} Messungen",
+                )
+                StatChip(
+                    icon = Icons.Filled.Event,
+                    label = "${eventsDescending.size} Ereignisse",
+                )
+                StatChip(
+                    icon = Icons.Filled.Collections,
+                    label = "${photosByYear.values.flatten().size} Fotos",
+                )
+            }
+        }
+
+        SectionCard(
+            title = "Zuletzt erfasst",
+            subtitle = "Die neuesten Einträge auf einen Blick",
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (latestMeasurement == null) {
+                    EmptySectionText("Noch keine Messwerte vorhanden.")
+                } else {
+                    Text(
+                        text = "Letzte Messung: ${latestMeasurement.date.format(UI_DATE_FORMAT)}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = buildList {
+                            latestMeasurement.weightGrams?.let { add("${formatDecimal(it)} g") }
+                            latestMeasurement.carapaceLengthMm?.let { add("${formatDecimal(it)} mm") }
+                        }.joinToString(" | "),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+
+                HorizontalDivider()
+
+                if (latestEvent == null) {
+                    EmptySectionText("Noch kein Lebensereignis erfasst.")
+                } else {
+                    Text(
+                        text = "Letztes Ereignis: ${latestEvent.title}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = eventMetaLabel(latestEvent),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun TurtleMeasurementsTab(
+    turtle: TurtleDetails,
+    contentPadding: PaddingValues,
+    chartMetric: ChartMetric,
+    onChartMetricChange: (ChartMetric) -> Unit,
+    measurementsDescending: List<MeasurementRecord>,
+    onAddMeasurement: () -> Unit,
+    onOpenPhoto: (String) -> Unit,
+    onDeleteMeasurement: (MeasurementRecord) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        SectionCard(
             title = "Verlauf",
             subtitle = "Gewicht oder Panzerlänge übersichtlich über die Zeit",
         ) {
@@ -1008,7 +1871,7 @@ private fun TurtleDetailScreen(
             ) {
                 FilterChip(
                     selected = chartMetric == ChartMetric.WEIGHT,
-                    onClick = { chartMetric = ChartMetric.WEIGHT },
+                    onClick = { onChartMetricChange(ChartMetric.WEIGHT) },
                     label = { Text("Gewicht") },
                     leadingIcon = {
                         Icon(Icons.Filled.WaterDrop, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -1016,7 +1879,7 @@ private fun TurtleDetailScreen(
                 )
                 FilterChip(
                     selected = chartMetric == ChartMetric.LENGTH,
-                    onClick = { chartMetric = ChartMetric.LENGTH },
+                    onClick = { onChartMetricChange(ChartMetric.LENGTH) },
                     label = { Text("Länge") },
                     leadingIcon = {
                         Icon(Icons.Filled.Straighten, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -1063,21 +1926,23 @@ private fun TurtleDetailScreen(
                 }
             }
 
-            AssistChip(
+            Button(
                 onClick = onAddMeasurement,
-                label = { Text("Neue Messung") },
-                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            )
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Neue Messung erfassen")
+            }
         }
 
         SectionCard(
             title = "Messungen",
             subtitle = "Digitales Gegenstück zu deiner bisherigen Tabelle",
-            action = {
-                TextButton(onClick = onAddMeasurement) {
-                    Text("Hinzufügen")
-                }
-            },
         ) {
             if (measurementsDescending.isEmpty()) {
                 EmptySectionText("Noch keine Messwerte vorhanden.")
@@ -1095,14 +1960,30 @@ private fun TurtleDetailScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun TurtleEventsTab(
+    contentPadding: PaddingValues,
+    eventsDescending: List<LifeEventRecord>,
+    onAddEvent: () -> Unit,
+    onDeleteEvent: (LifeEventRecord) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         SectionCard(
             title = "Lebensereignisse",
             subtitle = "Zum Beispiel Winterruhe, Tierarzt, erstes Gelege oder Besonderheiten",
-            action = {
-                TextButton(onClick = onAddEvent) {
-                    Text("Hinzufügen")
-                }
-            },
         ) {
             if (eventsDescending.isEmpty()) {
                 EmptySectionText("Noch keine Lebensereignisse erfasst.")
@@ -1117,16 +1998,46 @@ private fun TurtleDetailScreen(
                     }
                 }
             }
+
+            Button(
+                onClick = onAddEvent,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Lebensereignis hinzufügen")
+            }
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun TurtlePhotosTab(
+    contentPadding: PaddingValues,
+    photosByYear: Map<Int, List<PhotoRecord>>,
+    onAddPhoto: () -> Unit,
+    onOpenPhoto: (String) -> Unit,
+    onDeletePhoto: (PhotoRecord) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         SectionCard(
             title = "Jahresfotos",
             subtitle = "Fotos werden lokal aus Kamera oder Galerie importiert",
-            action = {
-                TextButton(onClick = onAddPhoto) {
-                    Text("Foto hinzufügen")
-                }
-            },
         ) {
             if (photosByYear.isEmpty()) {
                 EmptySectionText("Noch keine Fotos verknüpft.")
@@ -1153,9 +2064,22 @@ private fun TurtleDetailScreen(
                     }
                 }
             }
+
+            Button(
+                onClick = onAddPhoto,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Foto hinzufügen")
+            }
         }
 
-        Spacer(modifier = Modifier.height(72.dp))
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
@@ -1357,13 +2281,55 @@ private fun PhotoCard(
 private fun StatChip(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
+    modifier: Modifier = Modifier,
 ) {
     AssistChip(
         onClick = {},
         enabled = false,
-        label = { Text(label) },
+        modifier = modifier,
+        label = {
+            Text(
+                text = label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
     )
+}
+
+@Composable
+private fun StatChipGrid(
+    items: List<HomeStatChip>,
+    columns: Int = 2,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.chunked(columns).forEach { rowItems ->
+            if (rowItems.size == 1) {
+                StatChip(
+                    icon = rowItems.first().icon,
+                    label = rowItems.first().label,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    rowItems.forEach { item ->
+                        StatChip(
+                            icon = item.icon,
+                            label = item.label,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    repeat(columns - rowItems.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -1494,7 +2460,10 @@ private fun DropdownSelectionField(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(
+                    type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                    enabled = true,
+                )
                 .fillMaxWidth(),
             singleLine = true,
         )
@@ -1599,18 +2568,33 @@ private fun PhotoSourceDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Foto hinzufügen") },
-        text = { Text("Wie möchtest du das Foto in die App übernehmen? EXIF-Daten werden beim Import entfernt.") },
-        confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onPickFromGallery) {
-                    Icon(Icons.Filled.Collections, contentDescription = null)
-                    Text("Galerie")
-                }
-                TextButton(onClick = onTakePhoto) {
-                    Icon(Icons.Filled.CameraAlt, contentDescription = null)
-                    Text("Kamera")
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                Text("Wie möchtest du das Foto in die App übernehmen? EXIF-Daten werden beim Import entfernt.")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PhotoSourceOption(
+                        icon = Icons.Filled.Collections,
+                        label = "Galerie",
+                        onClick = onPickFromGallery,
+                    )
+                    Spacer(modifier = Modifier.width(20.dp))
+                    PhotoSourceOption(
+                        icon = Icons.Filled.CameraAlt,
+                        label = "Kamera",
+                        onClick = onTakePhoto,
+                    )
                 }
             }
+        },
+        confirmButton = {
+            Spacer(modifier = Modifier.width(0.dp))
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
@@ -1618,6 +2602,45 @@ private fun PhotoSourceDialog(
             }
         },
     )
+}
+
+@Composable
+private fun PhotoSourceOption(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(120.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+                    shape = RoundedCornerShape(22.dp),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(34.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
 }
 
 @Composable
@@ -2021,6 +3044,32 @@ private fun ConfirmDeleteDialog(
     )
 }
 
+@Composable
+private fun ConfirmRestoreDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Backup wiederherstellen?") },
+        text = {
+            Text(
+                "Beim Wiederherstellen werden deine aktuellen lokalen Schildkröten, Messungen, Ereignisse, Fotos und Einstellungen ersetzt. Fahre nur fort, wenn du diesen Stand wirklich überschreiben möchtest.",
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Wiederherstellen")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        },
+    )
+}
+
 private fun parseDateInputOrToday(text: String): LocalDate {
     val clean = text.trim()
     if (clean.isBlank()) return LocalDate.now()
@@ -2101,6 +3150,26 @@ private fun ageLabel(hatchDate: HatchDateInfo?): String {
     }
 }
 
+private fun ageCardLabel(hatchDate: HatchDateInfo?): String {
+    if (hatchDate == null) return "Alter offen"
+
+    val today = LocalDate.now()
+    val days = ChronoUnit.DAYS.between(hatchDate.date, today)
+    val period = Period.between(hatchDate.date, today)
+
+    return when (hatchDate.precision) {
+        HatchDatePrecision.DAY -> when {
+            days < 120 -> "Alter ${days} T."
+            period.years > 0 -> "Alter ${period.years} J. ${period.months} M."
+            else -> "Alter ${period.months} M. ${period.days} T."
+        }
+        HatchDatePrecision.MONTH -> when {
+            period.years > 0 -> "Alter ca. ${period.years} J. ${period.months} M."
+            else -> "Alter ca. ${period.months.coerceAtLeast(0)} M."
+        }
+    }
+}
+
 private fun formatHatchDateForInput(hatchDate: HatchDateInfo?): String {
     return when (hatchDate?.precision) {
         HatchDatePrecision.DAY -> hatchDate.date.format(INPUT_DATE_FORMAT)
@@ -2134,6 +3203,10 @@ private fun trashStatusLabel(trashedAt: Long?): String {
 }
 
 private fun formatDecimal(value: Float): String = DecimalFormat("#0.#").format(value)
+
+private fun defaultBackupFileName(now: LocalDate = LocalDate.now()): String {
+    return "MyTurtle_Backup_${now}.zip"
+}
 
 private const val TRASH_RETENTION_DAYS = 30L
 private val UI_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-uuuu")

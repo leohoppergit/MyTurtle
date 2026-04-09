@@ -20,6 +20,11 @@ data class CameraCaptureTarget(
     val cleanupPath: String,
 )
 
+data class RestorePhotoTarget(
+    val file: File,
+    val uriString: String,
+)
+
 class TurtleMediaStore(
     private val context: Context,
 ) {
@@ -61,6 +66,73 @@ class TurtleMediaStore(
     fun cleanupTemporaryCapture(cleanupPath: String?) {
         if (cleanupPath.isNullOrBlank()) return
         deleteIfInsideRoot(File(cleanupPath), context.cacheDir)
+    }
+
+    fun resolveImportedRelativePath(uriString: String?): String? {
+        val photoFile = resolveImportedPhotoFile(uriString) ?: return null
+        val canonicalRoot = importedMediaRoot().canonicalFile
+        val canonicalFile = photoFile.canonicalFile
+        val rootPath = canonicalRoot.path
+
+        if (!canonicalFile.path.startsWith(rootPath)) return null
+
+        return canonicalFile.path
+            .removePrefix(rootPath)
+            .trimStart(File.separatorChar)
+            .replace(File.separatorChar, '/')
+            .takeIf { it.isNotBlank() }
+    }
+
+    fun resolveImportedPhotoFile(uriString: String?): File? {
+        if (uriString.isNullOrBlank()) return null
+
+        val uri = Uri.parse(uriString)
+        if (uri.scheme != "file") return null
+
+        val file = uri.path?.let(::File) ?: return null
+        return try {
+            val canonicalFile = file.canonicalFile
+            val canonicalRoot = importedMediaRoot().canonicalFile
+            if (canonicalFile.path.startsWith(canonicalRoot.path)) canonicalFile else null
+        } catch (_: IOException) {
+            null
+        }
+    }
+
+    fun createRestoreTarget(
+        restoreSessionId: String,
+        backupRelativePath: String,
+    ): RestorePhotoTarget {
+        val sanitizedPath = sanitizeRelativePath(backupRelativePath)
+        val relativeImportedPath = "restored/$restoreSessionId/$sanitizedPath"
+        val targetFile = File(importedMediaRoot(), relativeImportedPath.toPlatformPath())
+        return RestorePhotoTarget(
+            file = targetFile,
+            uriString = Uri.fromFile(targetFile).toString(),
+        )
+    }
+
+    fun pruneImportedMedia(keepUriStrings: Set<String>) {
+        val keepFiles = keepUriStrings.mapNotNull { resolveImportedPhotoFile(it) }
+            .mapNotNull {
+                try {
+                    it.canonicalFile.path
+                } catch (_: IOException) {
+                    null
+                }
+            }
+            .toSet()
+
+        val root = importedMediaRoot()
+        if (!root.exists()) return
+
+        root.walkBottomUp().forEach { file ->
+            val canonicalPath = runCatching { file.canonicalFile.path }.getOrNull() ?: return@forEach
+            when {
+                file.isFile && canonicalPath !in keepFiles -> file.delete()
+                file.isDirectory && file != root && file.listFiles().isNullOrEmpty() -> file.delete()
+            }
+        }
     }
 
     private suspend fun importPhoto(
@@ -208,4 +280,16 @@ class TurtleMediaStore(
         } catch (_: IOException) {
         }
     }
+
+    private fun importedMediaRoot(): File = File(context.filesDir, "imported_media")
+
+    private fun sanitizeRelativePath(path: String): String {
+        val normalized = path.replace('\\', '/').trim('/')
+        require(normalized.isNotBlank() && !normalized.contains("..")) {
+            "Ungültiger Medienpfad im Backup."
+        }
+        return normalized
+    }
+
+    private fun String.toPlatformPath(): String = replace('/', File.separatorChar)
 }

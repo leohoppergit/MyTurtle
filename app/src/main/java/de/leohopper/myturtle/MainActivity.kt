@@ -14,6 +14,8 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MyTurtleViewModel by viewModels {
         MyTurtleViewModel.Factory(
             repository = (application as MyTurtleApplication).repository,
+            appSettings = (application as MyTurtleApplication).appSettings,
+            backupManager = (application as MyTurtleApplication).backupManager,
         )
     }
 

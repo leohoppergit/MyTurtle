@@ -18,8 +18,15 @@ interface TurtleDao {
     @Query("SELECT * FROM turtles WHERE trashedAt IS NOT NULL ORDER BY trashedAt DESC, name COLLATE NOCASE ASC")
     fun observeTrashedTurtles(): Flow<List<TurtleWithDetails>>
 
+    @Transaction
+    @Query("SELECT * FROM turtles ORDER BY id ASC")
+    suspend fun getAllTurtlesForBackup(): List<TurtleWithDetails>
+
     @Insert
     suspend fun insertTurtle(turtle: TurtleEntity): Long
+
+    @Insert
+    suspend fun insertTurtles(turtles: List<TurtleEntity>)
 
     @Update
     suspend fun updateTurtle(turtle: TurtleEntity)
@@ -34,10 +41,19 @@ interface TurtleDao {
     suspend fun insertMeasurement(measurement: MeasurementEntity): Long
 
     @Insert
+    suspend fun insertMeasurements(measurements: List<MeasurementEntity>)
+
+    @Insert
     suspend fun insertLifeEvent(event: LifeEventEntity): Long
 
     @Insert
+    suspend fun insertLifeEvents(events: List<LifeEventEntity>)
+
+    @Insert
     suspend fun insertPhoto(photo: PhotoEntity): Long
+
+    @Insert
+    suspend fun insertPhotos(photos: List<PhotoEntity>)
 
     @Query("SELECT * FROM measurements WHERE turtleId = :turtleId")
     suspend fun getMeasurementsByTurtleId(turtleId: Long): List<MeasurementEntity>
@@ -74,4 +90,34 @@ interface TurtleDao {
 
     @Query("DELETE FROM photos WHERE id = :photoId")
     suspend fun deletePhotoById(photoId: Long)
+
+    @Query("DELETE FROM photos")
+    suspend fun deleteAllPhotos()
+
+    @Query("DELETE FROM life_events")
+    suspend fun deleteAllLifeEvents()
+
+    @Query("DELETE FROM measurements")
+    suspend fun deleteAllMeasurements()
+
+    @Query("DELETE FROM turtles")
+    suspend fun deleteAllTurtles()
+
+    @Transaction
+    suspend fun replaceAllData(
+        turtles: List<TurtleEntity>,
+        measurements: List<MeasurementEntity>,
+        lifeEvents: List<LifeEventEntity>,
+        photos: List<PhotoEntity>,
+    ) {
+        deleteAllPhotos()
+        deleteAllLifeEvents()
+        deleteAllMeasurements()
+        deleteAllTurtles()
+
+        if (turtles.isNotEmpty()) insertTurtles(turtles)
+        if (measurements.isNotEmpty()) insertMeasurements(measurements)
+        if (lifeEvents.isNotEmpty()) insertLifeEvents(lifeEvents)
+        if (photos.isNotEmpty()) insertPhotos(photos)
+    }
 }

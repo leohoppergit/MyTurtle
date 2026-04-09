@@ -4,25 +4,28 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import de.leohopper.myturtle.data.AppSettings
 import de.leohopper.myturtle.data.CameraCaptureTarget
+import de.leohopper.myturtle.data.HomeCardLayout
+import de.leohopper.myturtle.data.TurtleInputParser
 import de.leohopper.myturtle.data.TurtleRepository
+import de.leohopper.myturtle.data.backup.TurtleBackupManager
 import de.leohopper.myturtle.domain.HatchDateInfo
-import de.leohopper.myturtle.domain.HatchDatePrecision
 import de.leohopper.myturtle.domain.TurtleDetails
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.format.ResolverStyle
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import java.time.LocalDate
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MyTurtleViewModel(
     private val repository: TurtleRepository,
+    private val appSettings: AppSettings,
+    private val backupManager: TurtleBackupManager,
 ) : ViewModel() {
 
     val turtles: StateFlow<List<TurtleDetails>> = repository.observeTurtles().stateIn(
@@ -37,8 +40,12 @@ class MyTurtleViewModel(
         initialValue = emptyList(),
     )
 
+    val homeCardLayout: StateFlow<HomeCardLayout> = appSettings.homeCardLayout
+
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val messages = _messages.asSharedFlow()
+    private val _isBackupOperationRunning = MutableStateFlow(false)
+    val isBackupOperationRunning = _isBackupOperationRunning.asStateFlow()
 
     init {
         purgeExpiredTrash()
@@ -56,13 +63,13 @@ class MyTurtleViewModel(
             return "Bitte gib einen Namen für die Schildkröte an."
         }
 
-        val hatchDate = parseOptionalHatchDate(hatchDateInput) ?: run {
+        val hatchDate = TurtleInputParser.parseOptionalHatchDate(hatchDateInput) ?: run {
             if (hatchDateInput.isNotBlank()) {
                 return "Bitte gib das Schlupfdatum als TT-MM-JJJJ, MM-JJJJ oder MM/JJ ein."
             }
             null
         }
-        if (hatchDate != null && isFutureHatchDate(hatchDate)) {
+        if (hatchDate != null && TurtleInputParser.isFutureHatchDate(hatchDate)) {
             return "Das Schlupfdatum darf nicht in der Zukunft liegen."
         }
 
@@ -92,13 +99,13 @@ class MyTurtleViewModel(
             return "Der Name darf nicht leer sein."
         }
 
-        val hatchDate = parseOptionalHatchDate(hatchDateInput) ?: run {
+        val hatchDate = TurtleInputParser.parseOptionalHatchDate(hatchDateInput) ?: run {
             if (hatchDateInput.isNotBlank()) {
                 return "Bitte gib das Schlupfdatum als TT-MM-JJJJ, MM-JJJJ oder MM/JJ ein."
             }
             null
         }
-        if (hatchDate != null && isFutureHatchDate(hatchDate)) {
+        if (hatchDate != null && TurtleInputParser.isFutureHatchDate(hatchDate)) {
             return "Das Schlupfdatum darf nicht in der Zukunft liegen."
         }
 
@@ -125,7 +132,7 @@ class MyTurtleViewModel(
         photoUris: List<String>,
         onFinished: (String?) -> Unit = {},
     ): String? {
-        val date = parseOptionalDate(dateInput)
+        val date = TurtleInputParser.parseOptionalDate(dateInput)
         if (date == null) {
             return "Bitte gib für die Messung ein gültiges Datum ein."
         }
@@ -133,8 +140,8 @@ class MyTurtleViewModel(
             return "Das Messdatum darf nicht in der Zukunft liegen."
         }
 
-        val weight = parseOptionalFloat(weightInput)
-        val length = parseOptionalFloat(lengthInput)
+        val weight = TurtleInputParser.parseOptionalFloat(weightInput)
+        val length = TurtleInputParser.parseOptionalFloat(lengthInput)
 
         if (weightInput.isNotBlank() && weight == null) {
             return "Gewicht bitte als Zahl eingeben, zum Beispiel 37 oder 37,5."
@@ -180,7 +187,7 @@ class MyTurtleViewModel(
             return "Bitte gib dem Ereignis einen Titel."
         }
 
-        val date = parseOptionalDate(dateInput)
+        val date = TurtleInputParser.parseOptionalDate(dateInput)
         if (date == null) {
             return "Bitte gib für das Ereignis ein gültiges Datum ein."
         }
@@ -211,7 +218,7 @@ class MyTurtleViewModel(
             return "Es wurde kein Foto übernommen."
         }
 
-        val date = parseOptionalDate(dateInput) ?: run {
+        val date = TurtleInputParser.parseOptionalDate(dateInput) ?: run {
             if (dateInput.isNotBlank()) {
                 return "Bitte gib für das Foto ein gültiges Datum ein."
             }
@@ -340,105 +347,63 @@ class MyTurtleViewModel(
         }
     }
 
+    fun updateHomeCardLayout(layout: HomeCardLayout) {
+        appSettings.updateHomeCardLayout(layout)
+    }
+
+    fun exportBackup(targetUri: Uri) {
+        if (_isBackupOperationRunning.value) return
+
+        viewModelScope.launch {
+            _isBackupOperationRunning.value = true
+            try {
+                val summary = backupManager.exportBackup(targetUri)
+                showMessage(
+                    "Backup exportiert: ${summary.turtleCount} Schildkröten, ${summary.measurementCount} Messungen, ${summary.photoCount} Fotos.",
+                )
+            } catch (_: Exception) {
+                showMessage("Das Backup konnte nicht exportiert werden.")
+            } finally {
+                _isBackupOperationRunning.value = false
+            }
+        }
+    }
+
+    fun importBackup(sourceUri: Uri) {
+        if (_isBackupOperationRunning.value) return
+
+        viewModelScope.launch {
+            _isBackupOperationRunning.value = true
+            try {
+                val summary = backupManager.importBackup(sourceUri)
+                purgeExpiredTrash()
+                showMessage(
+                    "Backup wiederhergestellt: ${summary.turtleCount} Schildkröten, ${summary.measurementCount} Messungen, ${summary.photoCount} Fotos.",
+                )
+            } catch (_: Exception) {
+                showMessage("Das Backup konnte nicht wiederhergestellt werden.")
+            } finally {
+                _isBackupOperationRunning.value = false
+            }
+        }
+    }
+
     private fun showMessage(message: String) {
         _messages.tryEmit(message)
     }
 
-    private fun parseOptionalFloat(text: String): Float? {
-        val normalized = text.trim().replace(',', '.')
-        return normalized.toFloatOrNull()?.takeIf { it > 0f }
-    }
-
-    private fun isFutureHatchDate(hatchDate: HatchDateInfo): Boolean {
-        return when (hatchDate.precision) {
-            HatchDatePrecision.DAY -> hatchDate.date.isAfter(LocalDate.now())
-            HatchDatePrecision.MONTH -> YearMonth.from(hatchDate.date).isAfter(YearMonth.now())
-        }
-    }
-
-    private fun parseOptionalDate(text: String): LocalDate? {
-        val clean = text.trim()
-        if (clean.isBlank()) return null
-
-        return FULL_DATE_FORMATTERS.firstNotNullOfOrNull { formatter ->
-            try {
-                LocalDate.parse(clean, formatter)
-            } catch (_: DateTimeParseException) {
-                null
-            }
-        }
-    }
-
-    private fun parseOptionalHatchDate(text: String): HatchDateInfo? {
-        val clean = text.trim()
-        if (clean.isBlank()) return null
-
-        FULL_DATE_FORMATTERS.firstNotNullOfOrNull { formatter ->
-            try {
-                LocalDate.parse(clean, formatter)
-            } catch (_: DateTimeParseException) {
-                null
-            }
-        }?.let { date ->
-            return HatchDateInfo(
-                date = date,
-                precision = HatchDatePrecision.DAY,
-            )
-        }
-
-        val monthYear = MONTH_YEAR_FORMATTERS.firstNotNullOfOrNull { formatter ->
-            try {
-                YearMonth.parse(clean, formatter)
-            } catch (_: DateTimeParseException) {
-                null
-            }
-        } ?: parseCompactMonthYear(clean)
-
-        monthYear?.let { parsedMonthYear ->
-            return HatchDateInfo(
-                date = parsedMonthYear.atDay(1),
-                precision = HatchDatePrecision.MONTH,
-            )
-        }
-
-        return null
-    }
-
-    private fun parseCompactMonthYear(text: String): YearMonth? {
-        val match = SHORT_MONTH_YEAR_REGEX.matchEntire(text) ?: return null
-        val month = match.groupValues[1].toIntOrNull()?.takeIf { it in 1..12 } ?: return null
-        val shortYear = match.groupValues[2].toIntOrNull() ?: return null
-
-        return runCatching {
-            YearMonth.of(2000 + shortYear, month)
-        }.getOrNull()
-    }
-
-    companion object {
-        private val FULL_DATE_FORMATTERS = listOf(
-            DateTimeFormatter.ofPattern("dd-MM-uuuu").withResolverStyle(ResolverStyle.STRICT),
-            DateTimeFormatter.ofPattern("dd.MM.uuuu").withResolverStyle(ResolverStyle.STRICT),
-            DateTimeFormatter.ISO_LOCAL_DATE,
-        )
-
-        private val MONTH_YEAR_FORMATTERS = listOf(
-            DateTimeFormatter.ofPattern("MM-uuuu").withResolverStyle(ResolverStyle.STRICT),
-            DateTimeFormatter.ofPattern("MM.uuuu").withResolverStyle(ResolverStyle.STRICT),
-            DateTimeFormatter.ofPattern("MM/uuuu").withResolverStyle(ResolverStyle.STRICT),
-            DateTimeFormatter.ofPattern("M-uuuu").withResolverStyle(ResolverStyle.STRICT),
-            DateTimeFormatter.ofPattern("M.uuuu").withResolverStyle(ResolverStyle.STRICT),
-            DateTimeFormatter.ofPattern("M/uuuu").withResolverStyle(ResolverStyle.STRICT),
-        )
-
-        private val SHORT_MONTH_YEAR_REGEX = Regex("""^\s*(\d{1,2})\s*[/.-]\s*(\d{2})\s*$""")
-    }
-
     class Factory(
         private val repository: TurtleRepository,
+        private val appSettings: AppSettings,
+        private val backupManager: TurtleBackupManager,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return MyTurtleViewModel(repository = repository) as T
+            return MyTurtleViewModel(
+                repository = repository,
+                appSettings = appSettings,
+                backupManager = backupManager,
+            ) as T
         }
     }
 }

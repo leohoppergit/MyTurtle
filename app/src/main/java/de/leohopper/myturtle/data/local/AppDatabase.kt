@@ -14,7 +14,7 @@ import androidx.room.TypeConverters
         PhotoEntity::class,
     ],
     version = 5,
-    exportSchema = false,
+    exportSchema = true,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -27,8 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "myturtle.db",
-            ).fallbackToDestructiveMigration()
-                .build()
+            ).build()
         }
     }
 }
