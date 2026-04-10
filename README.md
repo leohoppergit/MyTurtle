@@ -4,21 +4,6 @@ Eine kleine, lokal arbeitende Android-App zur Dokumentation des Lebens einer Sch
 
 > Status: `v0.1.0-beta`
 
-<p align="middle">
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22de.leohopper.myturtle%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fleohoppergit%2FMyTurtle%22%2C%22author%22%3A%22leohoppergit%22%2C%22name%22%3A%22MyTurtle%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22sortMethodChoice%5C%22%3A%5C%22date%5C%22%2C%5C%22useLatestAssetDateAsReleaseDate%5C%22%3Afalse%2C%5C%22releaseTitleAsVersion%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22matchGroupToUse%5C%22%3A%5C%22%5C%22%2C%5C%22versionDetection%5C%22%3Atrue%2C%5C%22releaseDateAsVersion%5C%22%3Afalse%2C%5C%22useVersionCodeAsOSVersion%5C%22%3Afalse%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22appAuthor%5C%22%3A%5C%22%5C%22%2C%5C%22shizukuPretendToBeGooglePlay%5C%22%3Afalse%2C%5C%22allowInsecure%5C%22%3Afalse%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22about%5C%22%3A%5C%22%5C%22%2C%5C%22refreshBeforeDownload%5C%22%3Afalse%2C%5C%22includeZips%5C%22%3Afalse%2C%5C%22zippedApkFilterRegEx%5C%22%3A%5C%22%5C%22%7D%22%2C%22overrideSource%22%3Anull%7D">
-    <img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54" />
-  </a>
-</p>
-
-<p align="middle">
-  <a href="https://github.com/leohoppergit/MyTurtle/releases/tag/v0.1.0-beta">
-    <img src="https://img.shields.io/github/v/release/leohoppergit/MyTurtle?display_name=tag&amp;include_prereleases&amp;label=GitHub%20Release" alt="GitHub Release" />
-  </a>
-  <a href="https://github.com/leohoppergit/MyTurtle#appverifier">
-    <img src="https://img.shields.io/badge/AppVerifier-SHA--256-556B2F" alt="AppVerifier SHA-256" />
-  </a>
-</p>
-
 ## Enthalten in der Grundversion
 
 - Mehrere Schildkröten anlegen
@@ -40,6 +25,21 @@ Eine kleine, lokal arbeitende Android-App zur Dokumentation des Lebens einer Sch
 - Android-System-Cloud-Backups sind bewusst deaktiviert; Sicherungen laufen nur über die Exportfunktion in der App.
 - Fotos werden vor dem Speichern in die App ohne EXIF-Metadaten übernommen.
 
+## Backup & Wiederherstellung
+
+- In den Einstellungen kannst du vollständige ZIP-Backups exportieren und später wiederherstellen.
+- Gesichert werden Schildkröten, Messungen, Lebensereignisse, Fotos und die gewählte Startscreen-Kartenansicht.
+- Automatische Android-System- oder Cloud-Backups sind bewusst deaktiviert, damit die Daten nicht ungefragt außerhalb des Geräts landen.
+
+## Hinweise zum Beta-Status
+
+- Fotos werden als lokale `file://`-URIs im App-Speicher gehalten.
+- Die App nutzt den System-Dokumentenpicker, damit keine breit gefassten Medienspeicherrechte nötig sind.
+- Das Room-Schema wird exportiert und es gibt keine destruktive automatische Migration mehr.
+- Release-Builds sind minifiziert und ressourcengeschrumpft.
+- Gradle prüft Build-Artefakte per SHA-256; reine IDE-Quell-/Javadoc-Artefakte werden bewusst ausgenommen.
+- Vor einer öffentlichen `1.0` sollte der Restore-Pfad zusätzlich noch einmal praktisch auf mehreren Geräten gegengeprüft werden.
+
 ## Installation
 
 ### GitHub Releases
@@ -48,7 +48,7 @@ Die signierte Release-APK wird über GitHub Releases bereitgestellt.
 
 ### Obtainium
 
-Der Obtainium-Button oben nutzt den offiziellen `/app`-Linktyp von Obtainium und übergibt bereits die vollständige App-Konfiguration.
+Der Obtainium-Button nutzt den offiziellen `/app`-Linktyp von Obtainium und übergibt bereits die vollständige App-Konfiguration.
 
 Dadurch ist für MyTurtle auch `includePrereleases=true` direkt gesetzt, damit die aktuelle Beta-Version gefunden wird.
 
@@ -71,20 +71,21 @@ Verifiziere die Signatur des Release-Zertifikats mit diesem SHA-256-Fingerprint:
 3. Gradle-Sync starten.
 4. App auf Emulator oder Gerät ausführen.
 
-## Backup & Wiederherstellung
 
-- In den Einstellungen kannst du vollständige ZIP-Backups exportieren und später wiederherstellen.
-- Gesichert werden Schildkröten, Messungen, Lebensereignisse, Fotos und die gewählte Startscreen-Kartenansicht.
-- Automatische Android-System- oder Cloud-Backups sind bewusst deaktiviert, damit die Daten nicht ungefragt außerhalb des Geräts landen.
+<p align="middle">
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22de.leohopper.myturtle%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fleohoppergit%2FMyTurtle%22%2C%22author%22%3A%22leohoppergit%22%2C%22name%22%3A%22MyTurtle%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22sortMethodChoice%5C%22%3A%5C%22date%5C%22%2C%5C%22useLatestAssetDateAsReleaseDate%5C%22%3Afalse%2C%5C%22releaseTitleAsVersion%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22matchGroupToUse%5C%22%3A%5C%22%5C%22%2C%5C%22versionDetection%5C%22%3Atrue%2C%5C%22releaseDateAsVersion%5C%22%3Afalse%2C%5C%22useVersionCodeAsOSVersion%5C%22%3Afalse%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22appAuthor%5C%22%3A%5C%22%5C%22%2C%5C%22shizukuPretendToBeGooglePlay%5C%22%3Afalse%2C%5C%22allowInsecure%5C%22%3Afalse%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22about%5C%22%3A%5C%22%5C%22%2C%5C%22refreshBeforeDownload%5C%22%3Afalse%2C%5C%22includeZips%5C%22%3Afalse%2C%5C%22zippedApkFilterRegEx%5C%22%3A%5C%22%5C%22%7D%22%2C%22overrideSource%22%3Anull%7D">
+    <img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54" />
+  </a>
+</p>
 
-## Hinweise zum Beta-Status
-
-- Fotos werden als lokale `file://`-URIs im App-Speicher gehalten.
-- Die App nutzt den System-Dokumentenpicker, damit keine breit gefassten Medienspeicherrechte nötig sind.
-- Das Room-Schema wird exportiert und es gibt keine destruktive automatische Migration mehr.
-- Release-Builds sind minifiziert und ressourcengeschrumpft.
-- Gradle prüft Build-Artefakte per SHA-256; reine IDE-Quell-/Javadoc-Artefakte werden bewusst ausgenommen.
-- Vor einer öffentlichen `1.0` sollte der Restore-Pfad zusätzlich noch einmal praktisch auf mehreren Geräten gegengeprüft werden.
+<p align="middle">
+  <a href="https://github.com/leohoppergit/MyTurtle/releases/tag/v0.1.0-beta">
+    <img src="https://img.shields.io/github/v/release/leohoppergit/MyTurtle?display_name=tag&amp;include_prereleases&amp;label=GitHub%20Release" alt="GitHub Release" />
+  </a>
+  <a href="https://github.com/leohoppergit/MyTurtle#appverifier">
+    <img src="https://img.shields.io/badge/AppVerifier-SHA--256-556B2F" alt="AppVerifier SHA-256" />
+  </a>
+</p>
 
 ## Brand-Assets
 
